@@ -19,7 +19,7 @@ def clean_data_year(df):
     # insert Year column        
     df.insert(0, 'Year', 0)
     df['Year'] = df.apply(YearSetup, axis=1)
-    return df
+    
 
 def clean_data_weekDay(df):
     # fills each row based on the remainder of the division 'Date' by 7
@@ -41,7 +41,7 @@ def clean_data_weekDay(df):
     # insert WeekDay column
     df.insert(2, 'WeekDay', 0)
     df['WeekDay'] = df.apply(WeekDaySetup, axis=1)
-    return df
+    
 
 def clean_data_week(df):
     weeks = []
@@ -52,7 +52,7 @@ def clean_data_week(df):
             weeks.append(i)
         elif int(df['Year'][i+1]) != int(df['Year'][i]):
             weeks.append(i)
-    weeks.append(i)
+    weeks.append(len(df['Date']) - 1)
     # fills the table rows by checking if index smaller than index of the the last row with the same week
     def WeekSetup(row):
         for w in range(len(weeks)):
@@ -61,21 +61,21 @@ def clean_data_week(df):
     # insert Week column     
     df.insert(1, 'Week', 0)
     df['Week'] = df.apply(WeekSetup, axis=1)
-    return df
+    
 
 def clean_data(df):
     df = df.sort_values(['Date']).reset_index(drop=True)
-    df = clean_data_year(df)
-    df = clean_data_weekDay(df)
-    df = clean_data_week(df)
+    clean_data_year(df)
+    clean_data_weekDay(df)
+    clean_data_week(df)
     return df
 
 
 def main():
-    data = pandas.read_csv('data\All Data as of 2024.05.30 csv.csv') # load data
+    data = pandas.read_csv('data\All Data as of 2024.05.30.csv') # load data
     clean_df = clean_data(data)  # clean data
-    #clean_df.to_csv('data_cleaned/clean_data.csv', encoding='utf-8', index=False) # save cleaned data to scv
-    
+    clean_df.to_csv('data_cleaned/clean_data.csv', encoding='utf-8', index=False) # save cleaned data to scv
+    print(clean_df)
 
 if __name__ == "__main__":
     main()
