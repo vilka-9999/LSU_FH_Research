@@ -33,7 +33,6 @@ def clean_data_weekDay(df):
             return '1 Mon'
         elif int(row['Date']) % 7 == 3:
             return '2 Tue'
-
     df.insert(2, 'WeekDay', 0)
     df['WeekDay'] = df.apply(WeekDaySetup, axis=1)
     return df
