@@ -94,42 +94,28 @@ def clean_data(df):
 # functions for splitting data
 #############################
 
-def training_type_split(df):
-    pass
 
-
-# splits cleaned data into 3 df based on activity type
-def split_df_by_activity_type(df):
+# spliting data bt provided tag
+def split_by_tag(df, tag, folder_name, file_name):
     os.makedirs('data_cleaned/split_data', exist_ok=True) # create split data dirrectory
-    # create games.csv
     try: 
-        games_df = pandas.read_csv('data_cleaned/split_data/games/games.csv')
-        print('games.csv already exists')
+        games_df = pandas.read_csv(f'data_cleaned/split_data/{folder_name}/{file_name}')
+        print(f'{file_name} already exists')
     except:
-        os.makedirs('data_cleaned/split_data/games', exist_ok=True)
-        games_df = df[df['Tags'] == "game"].reset_index(drop=True)
-        games_df.to_csv('data_cleaned/split_data/games/games.csv', encoding='utf-8', index=False)
-        print('games.csv was created')
-    # create trainings.csv
-    try: 
-        trainings_df = pandas.read_csv('data_cleaned/split_data/trainings/trainings.csv')
-        print('trainings.csv already exists')
-    except:
-        os.makedirs('data_cleaned/split_data/trainings', exist_ok=True)
-        trainings_df = df[df['Tags'] == "training"].reset_index(drop=True)
-        trainings_df.to_csv('data_cleaned/split_data/trainings/trainings.csv', encoding='utf-8', index=False)
-        print('trainings.csv was created')
-    # create training_games.csv
-    try: 
-        training_games_df = pandas.read_csv('data_cleaned/split_data/trainings/training_games.csv')
-        print('training_games.csv already exists')
-    except:
-        training_games_df = df[df['Tags'] == "training game"].reset_index(drop=True)
-        training_games_df.to_csv('data_cleaned/split_data/trainings/training_games.csv', encoding='utf-8', index=False)
-        print('training_games was created')
+        os.makedirs(f'data_cleaned/split_data/{folder_name}', exist_ok=True)
+        games_df = df[df['Tags'] == f"{tag}"].reset_index(drop=True)
+        games_df.to_csv(f'data_cleaned/split_data/{folder_name}/{file_name}', encoding='utf-8', index=False)
+        print(f'{file_name} was created')
+
+
+# functions groups all splitting functions
+def split(df):
+
+    split_by_tag(df, 'game', 'games', 'games.csv')
+    split_by_tag(df, 'training', 'trainings', 'trainings.csv')
+    split_by_tag(df, 'training game', 'trainings', 'training_games.csv')
 
     # other data splits for files created in this function
-    training_type_split(trainings_df)
 
 
 #############################
@@ -138,12 +124,12 @@ def split_df_by_activity_type(df):
 
 # creates file for miles per week based on provided data and name
 def miles_per_week(df, file_name):
-    if os.path.exists(f'data_analyzed/miles_per_week/{file_name}.xlsx'):
+    if os.path.exists(f'data_analyzed/miles_per_week/{file_name}'):
         print(f'{file_name} already exists')
     else:
         df_grouped = df.groupby(['Week', 'Player Name']).agg(Distance_per_week=('Distance (miles)', 'sum')).reset_index()
         df_pivoted = df_grouped.pivot(index='Week', columns='Player Name', values='Distance_per_week')
-        df_pivoted.to_excel(f'data_analyzed/miles_per_week/{file_name}.xlsx')
+        df_pivoted.to_excel(f'data_analyzed/miles_per_week/{file_name}')
         print(f'{file_name} was created')
 
 
@@ -157,16 +143,16 @@ def analyze():
 
     # miles per week for every file
     os.makedirs('data_analyzed/miles_per_week', exist_ok=True)
-    miles_per_week(clean_df, 'miles_per_week_all_data')
-    miles_per_week(trainings_df, 'miles_per_week_trainings')
-    miles_per_week(games_df, 'miles_per_week_games')
+    miles_per_week(clean_df, 'miles_per_week_all_data.xlsx')
+    miles_per_week(trainings_df, 'miles_per_week_trainings.xlsx')
+    miles_per_week(games_df, 'miles_per_week_games.xlsx')
 
 
 
 def main():
     data = pandas.read_csv('data/All Data as of 2024.05.30.csv') # load data
     clean_df = clean_data(data)
-    split_df_by_activity_type(clean_df)
+    split(clean_df)
     analyze()
 
 if __name__ == "__main__":
