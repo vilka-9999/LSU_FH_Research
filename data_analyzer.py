@@ -18,13 +18,13 @@ def clean_data_year(df):
             years.append(i)
     years.append(len(df['Date']) - 1)
     # fills the table rows by checking if an index smaller than index of the the last row with the same year
-    def YearSetup(row):
+    def SemesterSetup(row):
         for y in range(len(years)):
             if row.name <= years[y]:
                 return int(y + 1)
     # insert Year column        
-    df.insert(0, 'Year', 0)
-    df['Year'] = df.apply(YearSetup, axis=1)
+    df.insert(0, 'Semester', 0)
+    df['Semester'] = df.apply(SemesterSetup, axis=1)
     
 
 # adds WeekDay column
@@ -58,7 +58,7 @@ def clean_data_week(df):
     for i in range(len(df['Date']) - 1):
         if int(df['WeekDay'][i+1][0]) - int(df['WeekDay'][i][0]) < 0:
             weeks.append(i)
-        elif int(df['Year'][i+1]) != int(df['Year'][i]):
+        elif int(df['Semester'][i+1]) != int(df['Semester'][i]):
             weeks.append(i)
     weeks.append(len(df['Date']) - 1)
     # fills the table rows by checking if index smaller than index of the the last row with the same week
@@ -94,7 +94,6 @@ def clean_data(df):
 # functions for splitting data
 #############################
 
-
 # spliting data bt provided tag
 def split_by_tag(df, tag, folder_name, file_name):
     os.makedirs('data_cleaned/split_data', exist_ok=True) # create split data dirrectory
@@ -106,16 +105,49 @@ def split_by_tag(df, tag, folder_name, file_name):
         games_df = df[df['Tags'] == f"{tag}"].reset_index(drop=True)
         games_df.to_csv(f'data_cleaned/split_data/{folder_name}/{file_name}', encoding='utf-8', index=False)
         print(f'{file_name} was created')
+    return df
+
+
+# split games by split_name value
+def split_games(df, split_name, file_name):
+    if os.path.exists(f'data_cleaned/split_data/games/{file_name}'):
+        print(f'{file_name} already exists')
+        return
+    
+    games_splited = df[df['Split Name'].str.contains(f"{split_name}", regex=False, na=False)].reset_index(drop=True)
+    games_splited.to_csv(f'data_cleaned/split_data/games/{file_name}', encoding='utf-8', index=False)
+    print(f'{file_name} was created')
+    
+
+# split trainings by session value
+def split_trainings(df, session, file_name):
+    if os.path.exists(f'data_cleaned/split_data/trainings/{file_name}'):
+        print(f'{file_name} already exists')
+        return 
+
+    games_splited = df[df['Session Title'].str.contains(f"{session}", regex=False, na=False)].reset_index(drop=True)
+    games_splited.to_csv(f'data_cleaned/split_data/trainings/{file_name}', encoding='utf-8', index=False)
+    print(f'{file_name} was created')
 
 
 # functions groups all splitting functions
 def split(df):
+    # main split
+    games_df = split_by_tag(df, 'game', 'games', 'games.csv')
+    trainings_df = split_by_tag(df, 'training', 'trainings', 'trainings.csv')
 
-    split_by_tag(df, 'game', 'games', 'games.csv')
-    split_by_tag(df, 'training', 'trainings', 'trainings.csv')
-    split_by_tag(df, 'training game', 'trainings', 'training_games.csv')
+    # split games df by game time
+    split_games(games_df, 'all', 'games_all.csv')
+    split_games(games_df, '1Q', 'games_1q.csv')
+    split_games(games_df, '2Q', 'games_2q.csv')
+    split_games(games_df, '3Q', 'games_3q.csv')
+    split_games(games_df, '4Q', 'games_4q.csv')
+    split_games(games_df, 'warmups', 'games_warmup.csv')
 
-    # other data splits for files created in this function
+    # split trainings
+    split_trainings(trainings_df, 'Practice', 'trainings_practice.csv',)
+    split_trainings(trainings_df, 'Conditioning', 'trainings_conditioning.csv',)
+    split_trainings(trainings_df, 'Pre-game', 'trainings_pregame.csv',)
 
 
 #############################
@@ -126,13 +158,32 @@ def split(df):
 def miles_per_week(df, file_name):
     if os.path.exists(f'data_analyzed/miles_per_week/{file_name}'):
         print(f'{file_name} already exists')
-    else:
-        df_grouped = df.groupby(['Week', 'Player Name']).agg(Distance_per_week=('Distance (miles)', 'sum')).reset_index()
-        df_pivoted = df_grouped.pivot(index='Week', columns='Player Name', values='Distance_per_week')
-        df_pivoted.to_excel(f'data_analyzed/miles_per_week/{file_name}')
-        print(f'{file_name} was created')
+        return
+
+    df_grouped = df.groupby(['Week', 'Player Name']).agg(Distance_per_week=('Distance (miles)', 'sum')).reset_index()
+    df_pivoted = df_grouped.pivot(index='Week', columns='Player Name', values='Distance_per_week')
+    df_pivoted.to_excel(f'data_analyzed/miles_per_week/{file_name}')
+    print(f'{file_name} was created')
 
 
+# creates xlsx files based on value to analyze
+def table_value_analysis(df, value, filename):
+    # replace / since it would create directory
+    folder = value.replace('/', '-')
+    filename = filename.replace('/', '-')
+    filename = f'{folder}_{filename}.xlsx'
+
+    if os.path.exists(f'data_analyzed/{folder}/{filename}'):
+        print(f'{filename} already exists')
+        return
+    
+    os.makedirs(f'data_analyzed/{folder}', exist_ok=True)
+    df_grouped = df.groupby(['Date', 'Player Name']).agg(values=(f'{value}', 'max')).reset_index()
+    df_pivoted = df_grouped.pivot(index='Date', columns='Player Name', values='values')
+    df_pivoted.to_excel(f'data_analyzed/{folder}/{filename}')
+    print(f'{filename} was created')
+
+    
 # functions groups all analyzing functions
 def analyze():
     os.makedirs('data_analyzed', exist_ok=True)
@@ -147,10 +198,24 @@ def analyze():
     miles_per_week(trainings_df, 'miles_per_week_trainings.xlsx')
     miles_per_week(games_df, 'miles_per_week_games.xlsx')
 
+    # analyzing split data
+    for dirpath, dirnames, filenames in os.walk('data_cleaned/split_data'):
+        for filename in filenames:
+            # set up
+            file_path = os.path.join(dirpath, filename)
+            file = pandas.read_csv(file_path)
+            filename = filename[:filename.index('.')]
+            # analysis
+            table_value_analysis(file, 'Distance (miles)', filename)
+            table_value_analysis(file, 'Energy (kcal)', filename)
+            table_value_analysis(file, 'Top Speed (m/s)', filename)
+            table_value_analysis(file, 'Power Score (w/kg)', filename)
+            table_value_analysis(file, 'Work Ratio', filename)
 
+            
 
 def main():
-    data = pandas.read_csv('data/All Data as of 2024.05.30.csv') # load data
+    data = pandas.read_csv('data/All Data as of 2024.05.30 (normalized).csv') # load data
     clean_df = clean_data(data)
     split(clean_df)
     analyze()
