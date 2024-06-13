@@ -98,14 +98,14 @@ def clean_data(df):
 def split_by_tag(df, tag, folder_name, file_name):
     os.makedirs('data_cleaned/split_data', exist_ok=True) # create split data dirrectory
     try: 
-        games_df = pandas.read_csv(f'data_cleaned/split_data/{folder_name}/{file_name}')
+        df_splitted = pandas.read_csv(f'data_cleaned/split_data/{folder_name}/{file_name}')
         print(f'{file_name} already exists')
     except:
         os.makedirs(f'data_cleaned/split_data/{folder_name}', exist_ok=True)
-        games_df = df[df['Tags'] == f"{tag}"].reset_index(drop=True)
-        games_df.to_csv(f'data_cleaned/split_data/{folder_name}/{file_name}', encoding='utf-8', index=False)
+        df_splitted = df[df['Tags'] == f"{tag}"].reset_index(drop=True)
+        df_splitted.to_csv(f'data_cleaned/split_data/{folder_name}/{file_name}', encoding='utf-8', index=False)
         print(f'{file_name} was created')
-    return df
+    return df_splitted
 
 
 # split games by split_name value
@@ -215,7 +215,7 @@ def analyze():
             
 
 def main():
-    data = pandas.read_csv('data/All Data as of 2024.05.30 (normalized).csv') # load data
+    data = pandas.read_csv('data/All Data as of 2024.06.10 (normalized).csv') # load data
     clean_df = clean_data(data)
     split(clean_df)
     analyze()
