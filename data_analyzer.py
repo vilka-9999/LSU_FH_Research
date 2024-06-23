@@ -32,19 +32,19 @@ def clean_data_weekDay(df):
     # fills each row based on the remainder of the division 'Date' by 7
     def WeekDaySetup(row):
         if int(row['Date']) % 7 == 4:
-            return '3 Wen'
+            return 3
         elif int(row['Date']) % 7 == 5:
-            return '4 Thu'
+            return 4
         elif int(row['Date']) % 7 == 6:
-            return '5 Fri'
+            return 5
         elif int(row['Date']) % 7 == 0:
-            return '6 Sat'
+            return 6
         elif int(row['Date']) % 7 == 1:
-            return '7 Sun'
+            return 7
         elif int(row['Date']) % 7 == 2:
-            return '1 Mon'
+            return 1
         elif int(row['Date']) % 7 == 3:
-            return '2 Tue'
+            return 2
     # insert WeekDay column
     df.insert(2, 'WeekDay', 0)
     df['WeekDay'] = df.apply(WeekDaySetup, axis=1)
@@ -56,7 +56,7 @@ def clean_data_week(df):
     # fills "weeks list" where index is a week's number and the element at that index is an index of the table row
     # The index of a row is the last index of the row with the current week
     for i in range(len(df['Date']) - 1):
-        if int(df['WeekDay'][i+1][0]) - int(df['WeekDay'][i][0]) < 0:
+        if int(df['WeekDay'][i+1]) - int(df['WeekDay'][i]) < 0:
             weeks.append(i)
         elif int(df['Semester'][i+1]) != int(df['Semester'][i]):
             weeks.append(i)
@@ -102,7 +102,7 @@ def split_by_tag(df, tag, folder_name, file_name):
         print(f'{file_name} already exists')
     except:
         os.makedirs(f'data_cleaned/split_data/{folder_name}', exist_ok=True)
-        df_splitted = df[df['Tags'] == f"{tag}"].reset_index(drop=True)
+        
         df_splitted.to_csv(f'data_cleaned/split_data/{folder_name}/{file_name}', encoding='utf-8', index=False)
         print(f'{file_name} was created')
     return df_splitted
@@ -130,11 +130,41 @@ def split_trainings(df, session, file_name):
     print(f'{file_name} was created')
 
 
+def split_by_semester(df):
+    if os.path.exists(f'data_cleaned/split_data/semesters'):
+        print(f'semesters already exists')
+        return
+    
+    os.makedirs(f'data_cleaned/split_data/semesters', exist_ok=True)
+    
+    df = df[df['Split Name'] == "all"].reset_index(drop=True)
+    df.to_csv(f'data_cleaned/split_data/semesters/all.csv', encoding='utf-8', index=False)
+
+    semesters = df['Semester'].unique()
+    spring = []
+    fall = []
+    for s in semesters:
+        if s % 2 == 0:
+            spring.append(s)
+        else:
+            fall.append(s)
+
+    df_splitted = df[df['Semester'].isin(spring)].reset_index(drop=True)
+    df_splitted.to_csv(f'data_cleaned/split_data/semesters/spring.csv', encoding='utf-8', index=False)
+    print(f'spring.csv was created')
+    df_splitted = df[df['Semester'].isin(fall)].reset_index(drop=True)
+    df_splitted.to_csv(f'data_cleaned/split_data/semesters/fall.csv', encoding='utf-8', index=False)
+    print(f'fall.csv was created')
+
+
+
+
 # functions groups all splitting functions
 def split(df):
     # main split
     games_df = split_by_tag(df, 'game', 'games', 'games.csv')
     trainings_df = split_by_tag(df, 'training', 'trainings', 'trainings.csv')
+    split_by_semester(df)
 
     # split games df by game time
     split_games(games_df, 'all', 'games_all.csv')
@@ -171,7 +201,7 @@ def table_value_analysis(df, value, filename):
     # replace / since it would create directory
     folder = value.replace('/', '-')
     filename = filename.replace('/', '-')
-    filename = f'{folder}_{filename}.xlsx'
+    filename = f'{folder}_{filename}.csv'
 
     if os.path.exists(f'data_analyzed/{folder}/{filename}'):
         print(f'{filename} already exists')
@@ -180,7 +210,7 @@ def table_value_analysis(df, value, filename):
     os.makedirs(f'data_analyzed/{folder}', exist_ok=True)
     df_grouped = df.groupby(['Date', 'Player Name']).agg(values=(f'{value}', 'max')).reset_index()
     df_pivoted = df_grouped.pivot(index='Date', columns='Player Name', values='values')
-    df_pivoted.to_excel(f'data_analyzed/{folder}/{filename}')
+    df_pivoted.to_csv(f'data_analyzed/{folder}/{filename}')
     print(f'{filename} was created')
 
     
@@ -189,7 +219,9 @@ def analyze():
     os.makedirs('data_analyzed', exist_ok=True)
     # main dfs to analyze
     clean_df = pandas.read_csv('data_cleaned/clean_data.csv')
+    clean_df = clean_df[clean_df['Split Name'] == "all"].reset_index(drop=True)
     games_df = pandas.read_csv('data_cleaned/split_data/games/games.csv')
+    games_df = games_df[games_df['Split Name'] == "all"].reset_index(drop=True)
     trainings_df = pandas.read_csv('data_cleaned/split_data/trainings/trainings.csv')
 
     # miles per week for every file
@@ -211,11 +243,13 @@ def analyze():
             table_value_analysis(file, 'Top Speed (m/s)', filename)
             table_value_analysis(file, 'Power Score (w/kg)', filename)
             table_value_analysis(file, 'Work Ratio', filename)
-
+            table_value_analysis(file, 'Duration', filename)
+            table_value_analysis(file, 'Distance Per Min (m/min)', filename)
+                                        
             
 
 def main():
-    data = pandas.read_csv('data/All Data as of 2024.06.10 (normalized).csv') # load data
+    data = pandas.read_csv('data/All Data as of 2024.05.30 (normalized).csv') # load data
     clean_df = clean_data(data)
     split(clean_df)
     analyze()
