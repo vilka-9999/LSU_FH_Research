@@ -28,7 +28,7 @@ def compare_algorithms(data, data_name, lbl):
     models = [rfc, knc, svc, perc, gnb]
 
     # get labels for supervised learning
-    evidence = data[['Distance (miles)', 'Sprint Distance (m)', 'Power Plays', 'Energy (kcal)', 'Player Load', 'Top Speed (m/s)', 'Distance Per Min (m/min)']]
+    evidence = data[['Sprint Distance (m)', 'Power Plays', 'Energy (kcal)', 'Player Load', 'Top Speed (m/s)', 'Distance Per Min (m/min)']]
     label = data[f'{lbl}']
     # scale data
     sc = StandardScaler() 
@@ -43,9 +43,9 @@ def compare_algorithms(data, data_name, lbl):
     # loop through models to check results for every model
     for model in models:
         # check cross value for 3 fields
-        accuracy = cross_val_score(model, evidence, label, cv=10)
-        precision = cross_val_score(model, evidence, label, cv=10, scoring='precision_macro')
-        recall = cross_val_score(model, evidence, label, cv=10, scoring='recall_macro')
+        accuracy = cross_val_score(model, evidence, label, cv=5)
+        precision = cross_val_score(model, evidence, label, cv=5, scoring='precision_macro')
+        recall = cross_val_score(model, evidence, label, cv=5, scoring='recall_macro')
         # mean results
         accuracy_mean = round(accuracy.mean() * 100, 2)
         precision_mean = round(precision.mean() * 100, 2)
@@ -80,7 +80,7 @@ def main():
         data = pd.read_csv(f'{file_path}')
         data_name = filename[ : filename.index('.')]
         # compare algorithms
-        compare_algorithms(data, data_name, 'Tags')
+        compare_algorithms(data, data_name, 'NewTags')
 
 if __name__ == "__main__":
     main()

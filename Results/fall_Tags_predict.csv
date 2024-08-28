@@ -1,4 +1,4 @@
 score_name,RandomForestClassifier,KNeighborsClassifier,SVC,Perceptron,GaussianNB
-accuracy,89.22,88.41,88.59,61.92,78.6
-precision_macro,88.79,88.35,89.38,62.32,80.47
-recall_macro,87.14,86.71,86.15,59.89,73.71
+accuracy,86.35,86.08,85.82,58.35,77.88
+precision_macro,85.27,85.89,86.07,55.28,79.45
+recall_macro,84.8,84.04,83.38,54.62,73.11

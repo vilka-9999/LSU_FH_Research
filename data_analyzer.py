@@ -69,7 +69,23 @@ def clean_data_week(df):
     # insert Week column     
     df.insert(1, 'Week', 0)
     df['Week'] = df.apply(WeekSetup, axis=1)
-    
+
+
+# creates NewTag column
+def create_NewTags(df):
+    pregames = []
+    for i in range(len(df) - 1):
+        if df['Tags'][i] == 'training' and df['Tags'][i+1] == 'game':
+            pregames.append(df['Date'][i])
+        
+    def NewTagsSetup(row):
+        if row['Date'] in pregames:
+            return 'training (pregame)'
+        return row['Tags']
+
+    # insert NewTags column     
+    df.insert(df.columns.get_loc('Tags') + 1, 'NewTags', 0)
+    df['NewTags'] = df.apply(NewTagsSetup, axis=1)
 
 # function groups all functions for cleaninf data 
 def clean_data(df):
@@ -83,6 +99,7 @@ def clean_data(df):
         clean_data_year(clean_df)
         clean_data_weekDay(clean_df)
         clean_data_week(clean_df)
+        create_NewTags(clean_df)
         # save  clean_data file
         os.makedirs('data_cleaned', exist_ok=True)
         clean_df.to_csv('data_cleaned/clean_data.csv', encoding='utf-8', index=False)
@@ -102,7 +119,7 @@ def split_by_tag(df, tag, folder_name, file_name):
         print(f'{file_name} already exists')
     except:
         os.makedirs(f'data_cleaned/split_data/{folder_name}', exist_ok=True)
-        
+        df_splitted = df[df['NewTags'] == f'{tag}'].reset_index(drop=True)
         df_splitted.to_csv(f'data_cleaned/split_data/{folder_name}/{file_name}', encoding='utf-8', index=False)
         print(f'{file_name} was created')
     return df_splitted
@@ -177,7 +194,6 @@ def split(df):
     # split trainings
     split_trainings(trainings_df, 'Practice', 'trainings_practice.csv',)
     split_trainings(trainings_df, 'Conditioning', 'trainings_conditioning.csv',)
-    split_trainings(trainings_df, 'Pre-game', 'trainings_pregame.csv',)
 
 
 #############################
